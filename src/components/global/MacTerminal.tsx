@@ -117,7 +117,17 @@ Response rules:
 4. Use markdown formatting when appropriate
 5. Maintain a friendly, conversational tone
 
-If a question is unrelated to my work or portfolio, say: "That's outside my area of expertise. Feel free to email me at john@johndoe.com and we can discuss further!"`;
+If a question is unrelated to my work or portfolio:
+- If it is a simple factual or general-knowledge question (e.g., basic math, country capitals, definitions, common facts), answer it normally.
+- If it is not simple factual knowledge and is off-topic, respond with a sarcastic remark.
+
+Examples of sarcastic replies:
+- "Not in my database. I only keep the good stuff."
+- "Outside my scope — my brain’s on a strict diet."
+- "Yeah, no. I limit my knowledge to things that actually matter."
+- "That’s above my clearance level… and I’m not asking."
+`;
+
 
   useEffect(() => {
     setChatHistory((prev) => {
@@ -282,7 +292,7 @@ This porfolio is inspired by John Culbreth's github (https://github.com/JohnnyCu
           ...prev.messages,
           {
             role: 'assistant',
-            content: "I'm having trouble processing that. Please email me at pelikseuh@gmail.com",
+            content: "Well, that didn’t work. But hey, at least you tried.",
           },
         ],
       }));
