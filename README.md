@@ -24,5 +24,5 @@ Astro • React • TypeScript • Tailwind • OpenAI
 ```bash
 git clone https://github.com/YOUR_USERNAME/macos-terminal-portfolio
 npm install
-cp .env.example .env  # Add your OpenAI key
+cp .env.example .env  # Add your API key
 npm run dev
