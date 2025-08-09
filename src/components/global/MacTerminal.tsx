@@ -73,13 +73,13 @@ const currentDate = new Date();
 Last login: ${formattedDate} on ttys001
 ----------------------------------------
 User      : Felix
-Location  : Medan, Indonesia
 
 Contact   : pelikseuh@gmail.com
 GitHub    : github.com/pelikse
 ----------------------------------------
 
-Type 'help' to see available commands.
+Try 'help' to see available commands.
+Ask me anything!
 `;
 
 
