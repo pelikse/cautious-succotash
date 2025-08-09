@@ -1,0 +1,25 @@
+@import 'tailwindcss';
+
+@layer base {
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
+      'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans',
+      'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body *{
+    cursor:url('../assets/cursor/default.png'),auto;
+  }
+
+  button,
+  a,
+  [role="button"] {
+    cursor: url('../assets/cursor/handpointing.png'), pointer;
+  }
+
+  .font-mono {
+    font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  }
+}
