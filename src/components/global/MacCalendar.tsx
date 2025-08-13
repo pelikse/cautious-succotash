@@ -11,13 +11,11 @@ export default function MacCalendar({
   onPrevMonth,
   onNextMonth,
   onClose,
-  holidays,
 }: {
   date: Date;
   onPrevMonth: () => void;
   onNextMonth: () => void;
   onClose: () => void;
-  holidays: Holiday[];
 }) {
   const calendarRef = useRef<HTMLDivElement>(null);
 

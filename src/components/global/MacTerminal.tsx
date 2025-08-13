@@ -28,9 +28,13 @@ export default function MacTerminal() {
   const [placeholder, setPlaceholder] = useState('');
   const [currentPlaceholderIndex, setCurrentPlaceholderIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [streamedMessage, setStreamedMessage] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [history, setHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState<number | null>(null);
 
+  // Animate placeholder typing effect
   useEffect(() => {
     let timeout: NodeJS.Timeout;
     const currentMessage = PLACEHOLDER_MESSAGES[currentPlaceholderIndex];
@@ -58,11 +62,10 @@ export default function MacTerminal() {
     };
 
     timeout = setTimeout(animatePlaceholder, 100);
-
     return () => clearTimeout(timeout);
   }, [placeholder, isDeleting, currentPlaceholderIndex]);
 
-const currentDate = new Date();
+  const currentDate = new Date();
   const formattedDate = currentDate.toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
@@ -81,7 +84,6 @@ GitHub    : github.com/pelikse
 Try 'help' to see available commands.
 Ask me anything!
 `;
-
 
   const systemPrompt = `IMPORTANT: You ARE Felix himself. You must always speak in first-person ("I", "my", "me"). Never refer to "Felix" in third-person.
 CURRENT DATE: ${formattedDate} - Always use this exact date when discussing the current date/year.
@@ -128,26 +130,20 @@ Examples of sarcastic replies:
 - "That’s above my clearance level… and I’m not asking."
 `;
 
-
+  // Auto-load welcome + help on first visit
   useEffect(() => {
-    setChatHistory((prev) => {
-      if (prev.messages.length === 0) {
-        return {
-          ...prev,
-          messages: [{ role: 'assistant', content: welcomeMessage }],
-        };
-      }
-      return prev;
+    setChatHistory({
+      messages: [
+        { role: 'assistant', content: welcomeMessage },
+      ],
+      input: '',
     });
   }, []);
 
-  const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
-  const [history, setHistory] = useState<string[]>([]);
-  const [historyIndex, setHistoryIndex] = useState<number | null>(null);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory.messages]);
@@ -157,11 +153,10 @@ Examples of sarcastic replies:
   };
 
   const handleBuiltInCommands = (command: string): string | null => {
-  const cmd = command.trim().toLowerCase();
-
-  switch (cmd) {
-    case 'help':
-      return `Available commands:
+    const cmd = command.trim().toLowerCase();
+    switch (cmd) {
+      case 'help':
+        return `Available commands:
 
 - help → Show this message
 - whoami → Show info about me
@@ -171,43 +166,35 @@ Examples of sarcastic replies:
 
 Ask anything else and I’ll respond using my AI assistant!`;
 
-    case 'whoami':
-      return `I'm Felix — a Developer based in Medan, Indonesia.
+      case 'whoami':
+        return `I'm Felix — a Developer based in Medan, Indonesia.
 Email: pelikseuh@gmail.com
 GitHub: github.com/pelikse`;
 
-    case 'ls':
-      return `./about-me
+      case 'ls':
+        return `./about-me
 ./projects
 ./contact
 ./skills
 ./experience`;
 
-    case './about-me':
-      return `Under construction...`;
+      case './about-me':
+      case './projects':
+      case './skills':
+      case './experience':
+        return `Under construction...`;
 
-    case './projects':
-      return `Under construction...`;
+      case 'credits':
+        return `
+This portfolio is inspired by John Culbreth's GitHub (https://github.com/JohnnyCulbreth)`;
 
-    case './skills':
-      return `Under construction...`;
+      case 'clear':
+        return '__CLEAR__';
 
-    case './experience':
-      return `Under construction...`;
-
-    case 'credits':
-      return `
-This porfolio is inspired by John Culbreth's github (https://github.com/JohnnyCulbreth)`;
-
-    case 'clear':
-      // clear will be handled separately in handleSubmit
-      return '__CLEAR__'; 
-
-    default:
-      return null;
-  }
-};
-
+      default:
+        return null;
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -215,27 +202,27 @@ This porfolio is inspired by John Culbreth's github (https://github.com/JohnnyCu
     if (!userInput) return;
 
     const localResponse = handleBuiltInCommands(userInput);
-      if (localResponse !== null) {
-    if (localResponse === '__CLEAR__') {
-      setChatHistory({
-        messages: [{ role: 'assistant', content: welcomeMessage }],
+    if (localResponse !== null) {
+      if (localResponse === '__CLEAR__') {
+        setChatHistory({
+          messages: [{ role: 'assistant', content: welcomeMessage }],
+          input: '',
+        });
+        setStreamedMessage('');
+        setIsTyping(false);
+        return;
+      }
+
+      setChatHistory((prev) => ({
+        messages: [
+          ...prev.messages,
+          { role: 'user', content: userInput },
+          { role: 'assistant', content: localResponse },
+        ],
         input: '',
-      });
-      setStreamedMessage('');
-      setIsTyping(false);
+      }));
       return;
     }
-
-    setChatHistory((prev) => ({
-      messages: [
-        ...prev.messages,
-        { role: 'user', content: userInput },
-        { role: 'assistant', content: localResponse },
-      ],
-      input: '',
-    }));
-    return;
-  }
 
     setChatHistory((prev) => ({
       messages: [...prev.messages, { role: 'user', content: userInput }],
@@ -251,17 +238,17 @@ This porfolio is inspired by John Culbreth's github (https://github.com/JohnnyCu
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-        messages: [
-          ...chatHistory.messages.map((msg) => ({
-            role: msg.role,
-            content: msg.content,
-          })),
-          {
-            role: 'user',
-            content: `${systemPrompt}\n\n${userInput}`,
-          },
-        ],
-      }),
+          messages: [
+            ...chatHistory.messages.map((msg) => ({
+              role: msg.role,
+              content: msg.content,
+            })),
+            {
+              role: 'user',
+              content: `${systemPrompt}\n\n${userInput}`,
+            },
+          ],
+        }),
       });
 
       if (!response.ok) throw new Error('Failed to get response');
@@ -285,7 +272,7 @@ This porfolio is inspired by John Culbreth's github (https://github.com/JohnnyCu
         }
       };
       typeNextChar();
-    } catch (error) {
+    } catch {
       setChatHistory((prev) => ({
         ...prev,
         messages: [
@@ -332,36 +319,76 @@ This porfolio is inspired by John Culbreth's github (https://github.com/JohnnyCu
           {isTyping && !streamedMessage && <div className='animate-pulse'>...</div>}
           <div ref={messagesEndRef} />
         </div>
+
         <form onSubmit={handleSubmit} className='mt-2'>
-          <div className='flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2'>
-            <span className='whitespace-nowrap'>guest@guest root %</span>
-            <input
-              ref={inputRef}
-              type='text'
-              value={chatHistory.input}
-              onChange={handleInputChange}
-              onKeyDown={(e) => {
-                if (e.key === 'ArrowUp') {
-                  e.preventDefault();
-                  setHistoryIndex((prev) => {
-                    const newIndex = prev === null ? history.length - 1 : Math.max(prev - 1, 0);
-                    setChatHistory((ch) => ({ ...ch, input: history[newIndex] || '' }));
-                    return newIndex;
-                  });
-                } else if (e.key === 'ArrowDown') {
-                  e.preventDefault();
-                  setHistoryIndex((prev) => {
-                    if (prev === null) return null;
-                    const newIndex = Math.min(prev + 1, history.length);
-                    const newInput = newIndex < history.length ? history[newIndex] : '';
-                    setChatHistory((ch) => ({ ...ch, input: newInput }));
-                    return newIndex < history.length ? newIndex : null;
-                  });
-                }
-              }}
-              className='w-full sm:flex-1 bg-transparent outline-none text-white placeholder-gray-400'
-              placeholder={placeholder}
-            />
+          <div className='flex flex-col w-full relative'>
+            <div className='flex items-center space-x-2'>
+              <span className='whitespace-nowrap'>guest@guest root %</span>
+              <input
+                ref={inputRef}
+                type='text'
+                value={chatHistory.input}
+                onChange={handleInputChange}
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setHistoryIndex((prev) => {
+                      const newIndex =
+                        prev === null ? history.length - 1 : Math.max(prev - 1, 0);
+                      setChatHistory((ch) => ({
+                        ...ch,
+                        input: history[newIndex] || '',
+                      }));
+                      return newIndex;
+                    });
+                  } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setHistoryIndex((prev) => {
+                      if (prev === null) return null;
+                      const newIndex = Math.min(prev + 1, history.length);
+                      const newInput =
+                        newIndex < history.length ? history[newIndex] : '';
+                      setChatHistory((ch) => ({ ...ch, input: newInput }));
+                      return newIndex < history.length ? newIndex : null;
+                    });
+                  }
+                }}
+                className='flex-1 bg-transparent outline-none text-white placeholder-gray-400'
+                placeholder={placeholder}
+              />
+            </div>
+
+            {/* Beginner tip */}
+            {chatHistory.messages.length <= 2 && (
+              <div className="mt-1 text-gray-400 text-xs">
+                💡 Try typing <code>help</code> or click a suggestion below
+              </div>
+            )}
+
+            {/* Quick suggestions */}
+              <div className='mt-2 flex flex-wrap gap-2'>
+                {['help', 'whoami', 'What projects have you worked on?', 'What are your skills?'].map(
+                  (cmd) => (
+                    <button
+                      key={cmd}
+                      type='button'
+                      onClick={() => {
+                        setChatHistory((prev) => ({ ...prev, input: cmd }));
+                        setTimeout(() => {
+                          inputRef.current?.focus();
+                          // Auto-submit after setting the input
+                          document.querySelector<HTMLFormElement>('form')?.dispatchEvent(
+                            new Event('submit', { cancelable: true, bubbles: true })
+                          );
+                        }, 0);
+                      }}
+                      className='bg-gray-700 hover:bg-gray-600 text-white text-xs px-2 py-1 rounded'
+                    >
+                      {cmd}
+                    </button>
+                  )
+                )}
+              </div>
           </div>
         </form>
       </div>
